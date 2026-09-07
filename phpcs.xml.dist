@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ruleset name="Disciple.Tools Literacy Reports">
+    <description>Coding standards for the Disciple.Tools Literacy Reports plugin.</description>
+    <file>disciple-tools-literacy-reports.php</file>
+    <file>post-type</file>
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <arg name="extensions" value="php"/>
+    <!-- Incremental checks that do not force a rewrite of the existing style. -->
+    <rule ref="WordPress.Security.EscapeOutput"/>
+</ruleset>

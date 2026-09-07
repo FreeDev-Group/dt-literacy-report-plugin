@@ -1,0 +1,21 @@
+{
+    "name": "lmdcis/disciple-tools-literacy-reports",
+    "description": "Literacy reporting plugin for Disciple.Tools.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "squizlabs/php_codesniffer": "^3.10",
+        "wp-coding-standards/wpcs": "^3.1"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "lint": "vendor/bin/phpcs --standard=phpcs.xml.dist",
+        "lint:syntax": "php -l disciple-tools-literacy-reports.php && php -l post-type/literacy_report.php"
+    }
+}

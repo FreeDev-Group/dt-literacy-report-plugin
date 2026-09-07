@@ -43,5 +43,19 @@ post-type/
 
 The plugin uses the native `Disciple_Tools_Post_Type_Template` class and Disciple.Tools filters and actions. It therefore relies on the screens, navigation, templates, rewrite rules, and record connections already provided by Disciple.Tools.
 
+## Continuous integration
+
+GitHub Actions checks every pull request targeting `main` and every push to `main`. The workflow validates PHP syntax on PHP 7.4 through 8.4 and runs incremental WordPress coding-standard checks.
+
+To run the same checks locally:
+
+```bash
+composer install
+composer lint:syntax
+composer lint
+```
+
+To prevent unverified changes from being merged, configure a branch protection rule for `main` in the GitHub repository settings and require the **PHP syntax** and **WordPress coding standards** checks to pass.
+
 Current version: **2.0.0**  
 License: **GPL-2.0+**
