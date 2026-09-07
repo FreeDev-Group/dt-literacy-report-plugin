@@ -131,6 +131,7 @@ add_filter( 'dt_custom_fields_settings', function( $fields, $post_type ) {
         'name' => 'Students Present Count',
         'type' => 'number',
         'tile' => 'attendance',
+        'in_create_form' => false,
     ];
 
     // --- Total Students ---
@@ -138,6 +139,7 @@ add_filter( 'dt_custom_fields_settings', function( $fields, $post_type ) {
         'name' => 'Total Students',
         'type' => 'number',
         'tile' => 'attendance',
+        'in_create_form' => false,
     ];
 
     // --- Attendance Rate ---
@@ -145,6 +147,7 @@ add_filter( 'dt_custom_fields_settings', function( $fields, $post_type ) {
         'name' => 'Attendance Rate (%)',
         'type' => 'number',
         'tile' => 'attendance',
+        'in_create_form' => false,
     ];
 
     // --- Current Book ---
@@ -262,3 +265,108 @@ add_action( 'dt_post_created', function( $post_type, $post_id, $initial_fields )
         DT_Posts::update_post( 'literacy_report', $post_id, [ 'status' => 'new' ], true, false );
     }
 }, 10, 3 );
+
+// ============================================================
+// 9. AUTOMATIC ATTENDANCE CALCULATIONS
+// ============================================================
+
+/**
+ * Extract unique post IDs from a Disciple.Tools connection field.
+ *
+ * @param mixed $connections Connection field value.
+ * @return int[]
+ */
+function dt_literacy_reports_connection_ids( $connections ) {
+    if ( ! is_array( $connections ) ) {
+        return [];
+    }
+
+    $ids = [];
+    foreach ( $connections as $connection ) {
+        if ( is_array( $connection ) ) {
+            $id = $connection['ID'] ?? $connection['id'] ?? $connection['value'] ?? 0;
+        } else {
+            $id = $connection;
+        }
+
+        $id = absint( $id );
+        if ( $id > 0 ) {
+            $ids[] = $id;
+        }
+    }
+
+    return array_values( array_unique( $ids ) );
+}
+
+/**
+ * Recalculate and persist attendance summary fields.
+ *
+ * Present students take precedence when a contact occurs in both attendance
+ * lists. The total is the number of unique contacts across both lists.
+ *
+ * @param int        $post_id Literacy report ID.
+ * @param array|null $report  Processed Disciple.Tools post fields.
+ * @return void
+ */
+function dt_literacy_reports_recalculate_attendance( $post_id, $report = null ) {
+    static $is_recalculating = false;
+
+    if ( $is_recalculating ) {
+        return;
+    }
+
+    if ( ! is_array( $report ) ) {
+        $report = DT_Posts::get_post( 'literacy_report', $post_id );
+    }
+
+    if ( ! is_array( $report ) || is_wp_error( $report ) ) {
+        return;
+    }
+
+    $present_ids = dt_literacy_reports_connection_ids( $report['students_present'] ?? [] );
+    $absent_ids  = dt_literacy_reports_connection_ids( $report['students_absent'] ?? [] );
+    $student_ids = array_unique( array_merge( $present_ids, $absent_ids ) );
+
+    $attendance_count = count( $present_ids );
+    $total_students    = count( $student_ids );
+    $attendance_rate   = $total_students > 0
+        ? round( ( $attendance_count / $total_students ) * 100, 2 )
+        : 0;
+
+    $calculated_fields = [
+        'attendance_count' => $attendance_count,
+        'total_students'   => $total_students,
+        'attendance_rate'  => $attendance_rate,
+    ];
+
+    $changed_fields = [];
+    foreach ( $calculated_fields as $field_key => $value ) {
+        if ( ! isset( $report[$field_key] ) || (float) $report[$field_key] !== (float) $value ) {
+            $changed_fields[$field_key] = $value;
+        }
+    }
+
+    if ( empty( $changed_fields ) ) {
+        return;
+    }
+
+    $is_recalculating = true;
+    DT_Posts::update_post( 'literacy_report', $post_id, $changed_fields, true, false );
+    $is_recalculating = false;
+}
+
+add_action( 'dt_post_created', function( $post_type, $post_id ) {
+    if ( $post_type !== 'literacy_report' ) {
+        return;
+    }
+
+    dt_literacy_reports_recalculate_attendance( $post_id );
+}, 20, 2 );
+
+add_action( 'dt_post_updated', function( $post_type, $post_id, $initial_fields, $fields_before, $fields_after ) {
+    if ( $post_type !== 'literacy_report' ) {
+        return;
+    }
+
+    dt_literacy_reports_recalculate_attendance( $post_id, $fields_after );
+}, 20, 5 );

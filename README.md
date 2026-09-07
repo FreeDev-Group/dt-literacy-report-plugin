@@ -9,11 +9,13 @@ The plugin adds a new **Literacy Report** record type for tracking:
 - the report date and submission source;
 - the teacher and class;
 - present and absent students;
-- total student count and attendance rate;
+- automatically calculated attendance totals and attendance rate;
 - the current book and lesson;
 - the report status: new, reviewed, approved, needs follow-up, or closed.
 
 Each report can be connected to a **class** (a Disciple.Tools group), a **teacher** (a contact), and the contacts representing present or absent students. Related reports are also displayed on group and contact records.
+
+The attendance summary uses the student connection lists as its source of truth. The plugin automatically counts present students, counts unique students across the present and absent lists, and calculates the attendance percentage. If a student appears in both lists, that student is counted only once in the total and treated as present.
 
 The module grants the required permissions to the following Disciple.Tools roles: administrator, DT Admin, multiplier, dispatcher, marketer, and strategist. When a report is created without a status, it automatically receives the `new` status.
 
